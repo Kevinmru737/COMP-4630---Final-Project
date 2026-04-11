@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms as transforms
 import torch.nn as nn
 from PIL import Image
-
+import pydirectinput
 class BasicCNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -40,10 +40,15 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 
+
+current_key = None
+
+
 cap = cv.VideoCapture(0)
 if not cap.isOpened():
     print("Cannot open camera")
     exit()
+
 
 while True:
     ret, frame = cap.read()
@@ -61,6 +66,25 @@ while True:
         label = class_names[predicted.item()]
         conf_pct = confidence.item() * 100
 
+
+    # This is for my platformer input test which worked!
+    if label == 'F':
+        new_key = 'd'
+    elif label == 'H':
+        new_key = 'a'
+    elif label == 'C':
+        new_key = 'space'
+    else:
+        new_key = None
+
+     # only send events when key changes
+    if new_key != current_key:
+        if current_key:
+            pydirectinput.keyUp(current_key)
+        if new_key:
+            pydirectinput.keyDown(new_key)
+        current_key = new_key
+
     cv.putText(frame, f'{label} ({conf_pct:.1f}%)', (10, 40),
                cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
@@ -70,3 +94,4 @@ while True:
 
 cap.release()
 cv.destroyAllWindows()
+

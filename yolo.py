@@ -14,7 +14,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 # Train the model on your custom dataset
 # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/hand-keypoints.yaml
-model.train(data="hand-keypoints.yaml", epochs=100, imgsz=640)
+#model.train(data="hand-keypoints.yaml", epochs=100, imgsz=640)
 
 # https://www.youtube.com/watch?v=oA85M9JHsW0
 
