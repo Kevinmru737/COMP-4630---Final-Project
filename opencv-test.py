@@ -11,7 +11,7 @@ if not cap.isOpened():
     print("Cannot open camera")
     exit()
 
-stop_cascade = cv.CascadeClassifier('aGest.xml')
+stop_cascade = cv.CascadeClassifier('hand.xml')
 
 while True:
     # Capture frame-by-frame
