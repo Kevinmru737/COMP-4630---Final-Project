@@ -9,9 +9,12 @@ from matplotlib import pyplot as plt
 
 
 # Load a pretrained model
-model = YOLO("yolo26n.pt")
+# Load with explicit task
+model = YOLO("best.pt", task="pose")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+
 # Train the model on your custom dataset
 # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/hand-keypoints.yaml
 #model.train(data="hand-keypoints.yaml", epochs=100, imgsz=640)
@@ -43,6 +46,35 @@ def drawDetections(img, detections, threshold):
 
           cv.putText(img, boxLabel, (x1 + 10, y1 - baseline + 5), cv.FONT_HERSHEY_COMPLEX, 1, (0,0,0), 1)
 
+
+
+def drawDetectionsPose(img, detections, threshold):
+    boxes = detections.boxes
+    keypoints = detections.keypoints  # pose-specific
+
+    for i, box in enumerate(boxes):
+        if float(box.conf[0]) > threshold:
+            objClass = int(box.cls[0])
+            if objClass not in knownObjects:
+                knownObjects[objClass] = (
+                    random.randint(0,255), random.randint(0,255), random.randint(0,255)
+                )
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            boxLabel = detections.names[objClass]
+            boxColor = knownObjects[objClass]
+
+            cv.rectangle(img, (x1, y1), (x2, y2), boxColor, 2)
+            cv.putText(img, boxLabel, (x1, y1 - 10), cv.FONT_HERSHEY_COMPLEX, 1, boxColor, 1)
+
+            # Draw keypoints
+            if keypoints is not None:
+                kpts = keypoints.xy[i]  # shape: [num_keypoints, 2]
+                for kp in kpts:
+                    kx, ky = int(kp[0]), int(kp[1])
+                    if kx > 0 and ky > 0:  # skip missing keypoints
+                        cv.circle(img, (kx, ky), 4, (0, 255, 0), -1)
+
 # 1. Initialize the camera (0 is default, use 1 for external USB cams)
 cap = cv.VideoCapture(0)
 if not cap.isOpened():
@@ -65,7 +97,7 @@ while True:
     results = model(frame)[0]
 
     # Display the resulting frame
-    drawDetections(frame, results, threshold=0.5)
+    drawDetectionsPose(frame, results, threshold=0.5)
     cv.imshow('frame', frame)
     if cv.waitKey(1) == ord('q'):
         break
