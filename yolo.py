@@ -11,7 +11,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 # Load a pretrained model
 # Load with explicit task
-model_yolo = YOLO("best.pt", task="pose")
+model_yolo = YOLO("best30.pt", task="pose")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
@@ -40,7 +40,7 @@ class BasicCNN(nn.Module):
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model = BasicCNN().to(device)
-model.load_state_dict(torch.load('garbage_model.pt', map_location=device))
+model.load_state_dict(torch.load('model (1).pt', map_location=device))
 model.eval()
 
 class_names = [chr(ord('A') + i) for i in range(26) if i != 9 and i != 25]
@@ -147,7 +147,7 @@ while True:
             pil_img = Image.fromarray(gray)
             input_tensor = transform(pil_img).unsqueeze(0).to(device)
 
-            with torch.no_grad():
+            with torch.no_grad(): 
                 output = model(input_tensor)
                 probabilities = torch.softmax(output, dim=1)
                 confidence, predicted = torch.max(probabilities, 1)
