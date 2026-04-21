@@ -1,5 +1,3 @@
-# https://docs.ultralytics.com/tasks/detect/#how-do-i-train-a-yolo26-model-on-my-custom-dataset
-
 from ultralytics import YOLO
 import torch
 import numpy as np
@@ -9,12 +7,14 @@ from matplotlib import pyplot as plt
 import torch.nn as nn
 import torchvision.transforms as transforms
 from PIL import Image
-# Load a pretrained model
-# Load with explicit task
+import pydirectinput
+
+# Load a YOLO model for hand detection
 model_yolo = YOLO("best30.pt", task="pose")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
+# This architecture needs to be manually changed based on what the classification model was trained on
 class BasicCNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -37,12 +37,13 @@ class BasicCNN(nn.Module):
     def forward(self, X):
         return self.network(X)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Loading the classification model
 model = BasicCNN().to(device)
-model.load_state_dict(torch.load('model (1).pt', map_location=device))
+model.load_state_dict(torch.load('garbage_model.pt', map_location=device))
 model.eval()
 
+# The current classification model only has 24 classes excluding j and z (index 9 and 25 from the alphabet)
 class_names = [chr(ord('A') + i) for i in range(26) if i != 9 and i != 25]
 
 transform = transforms.Compose([
@@ -56,6 +57,7 @@ transform = transforms.Compose([
 # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/hand-keypoints.yaml
 #model.train(data="hand-keypoints.yaml", epochs=100, imgsz=640)
 
+# drawDetections from the youtube video below
 # https://www.youtube.com/watch?v=oA85M9JHsW0
 
 knownObjects = dict()
@@ -104,16 +106,18 @@ def drawDetectionsPose(img, detections, threshold):
             cv.rectangle(img, (x1, y1), (x2, y2), boxColor, 2)
             cv.putText(img, boxLabel, (x1, y1 - 10), cv.FONT_HERSHEY_COMPLEX, 1, boxColor, 1)
 
-            # Draw keypoints
-            if keypoints is not None:
-                kpts = keypoints.xy[i]  # shape: [num_keypoints, 2]
-                for kp in kpts:
-                    kx, ky = int(kp[0]), int(kp[1])
-                    if kx > 0 and ky > 0:  # skip missing keypoints
-                        cv.circle(img, (kx, ky), 4, (0, 255, 0), -1)
+            # Draw keypoints -- commenting out for actual performance run
+            #if keypoints is not None:
+            #    kpts = keypoints.xy[i]  # shape: [num_keypoints, 2]
+            #    for kp in kpts:
+            #        kx, ky = int(kp[0]), int(kp[1])
+            #        if kx > 0 and ky > 0:  # skip missing keypoints
+            #            cv.circle(img, (kx, ky), 4, (0, 255, 0), -1)
 
     
-
+# key that is pressed is determined by the classification model
+current_key = None
+label = None
 # 1. Initialize the camera (0 is default, use 1 for external USB cams)
 cap = cv.VideoCapture(0)
 if not cap.isOpened():
@@ -156,8 +160,29 @@ while True:
                 # Display the resulting frame
                 cv.putText(frame, f'{label} ({conf_pct:.1f}%)', (10, 40),
                         cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+              
+    # For platformer input for the game 'Growing Tiny' (soon to be available on Steam :3)
+    if label == 'F':
+        new_key = 'a'
+    elif label == 'L':
+        new_key = 'd'
+    elif label == 'C':
+        new_key = 'e'
+    elif label == 'O':
+        new_key = 'space'
+    else:
+        new_key = None
+
+    # only send events when key changes
+    if new_key != current_key:
+        if current_key:
+            pydirectinput.keyUp(current_key)
+        if new_key:
+            pydirectinput.keyDown(new_key)
+        current_key = new_key
 
 
+    
     
 
     drawDetectionsPose(frame, results, threshold=0.5)
@@ -168,10 +193,3 @@ while True:
 # When everything done, release the capture
 cap.release()
 cv.destroyAllWindows()
-
-
-#x1 = (x_center - width / 2) * img_width
-#y1 = (y_center - height / 2) * img_height
-#x2 = (x_center + width / 2) * img_width
-#y2 = (y_center + height / 2) * img_height
-

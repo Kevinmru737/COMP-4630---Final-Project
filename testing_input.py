@@ -69,10 +69,12 @@ while True:
 
     # This is for my platformer input test which worked!
     if label == 'F':
-        new_key = 'd'
-    elif label == 'H':
         new_key = 'a'
+    elif label == 'L':
+        new_key = 'd'
     elif label == 'C':
+        new_key = 'e'
+    elif label == 'O':
         new_key = 'space'
     else:
         new_key = None
